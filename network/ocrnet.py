@@ -37,6 +37,7 @@ from network.utils import make_attn_head
 from network.ocr_utils import SpatialGather_Module, SpatialOCR_Module
 from config import cfg
 from utils.misc import fmt_scale
+import torch
 
 
 class OCR_block(nn.Module):
@@ -208,7 +209,8 @@ class MscaleOCR(nn.Module):
         Output:
           If training, return loss, else return prediction + attention
         """
-        x_1x = inputs['images']
+        # x_1x = inputs['images']
+        x_1x = inputs
 
         assert 1.0 in scales, 'expected 1.0 to be the target scale'
         # Lower resolution provides attention for higher rez predictions,
@@ -259,7 +261,8 @@ class MscaleOCR(nn.Module):
             return loss
         else:
             output_dict['pred'] = pred
-            return output_dict
+            # return output_dict
+            return torch.argmax(pred, dim=1)
 
     def two_scale_forward(self, inputs):
         """
@@ -270,9 +273,10 @@ class MscaleOCR(nn.Module):
         If we use attention to combine the aux outputs, then
         we can use normal weighting for aux vs. cls outputs
         """
-        assert 'images' in inputs
-        x_1x = inputs['images']
-
+        # assert 'images' in inputs
+        # x_1x = inputs['images']
+        x_1x = inputs
+        
         x_lo = ResizeX(x_1x, cfg.MODEL.MSCALE_LO_SCALE)
         lo_outs = self._fwd(x_lo)
         pred_05x = lo_outs['cls_out']
@@ -324,7 +328,8 @@ class MscaleOCR(nn.Module):
                 'pred_10x': pred_10x,
                 'attn_05x': attn_05x,
             }
-            return output_dict
+            # return output_dict
+            return joint_pred
 
     def forward(self, inputs):
         
