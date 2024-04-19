@@ -66,8 +66,8 @@ class HRNetSemanticSegmentationTensorRT():
             args: engine file path
         """
         self.engine = self.load_engine(args.engine_file_path)
-        dummy_input_file = "/home/semantic_mapping/catkin_ws/src/online_semantic_mapping/src/hrnet/assets/seg_weights/1682354962.572154522.jpg"
-        input_image, self.image_width, self.image_height = self.load_image(dummy_input_file)
+        input_image, self.image_width, self.image_height = self.load_image(args.dummy_image_path)
+        self.image_width, self.image_height = args.image_width, args.image_height
         self.context = self.engine.create_execution_context()
         ### newer version (4090)
         self.context.set_input_shape("input.1", (1, 3, self.image_height, self.image_width))
@@ -88,10 +88,6 @@ class HRNetSemanticSegmentationTensorRT():
                 self.bindings.append(int(self.output_memory)) # This can be done only once
         self.stream = cuda.Stream()
         # print(self.bindings)
-
-        self.segmentation(input_image)
-        self.segmentation(input_image)
-        self.segmentation(input_image)
 
     def load_engine(self, engine_file_path):
         assert os.path.exists(engine_file_path)
@@ -129,8 +125,8 @@ class HRNetSemanticSegmentationTensorRT():
         img.convert('RGB').resize((1920, 1440), Image.NEAREST).save("/home/semantic_mapping/catkin_ws/test-3.png")
     
     def postprocess_map(self, data):
-        seg_color_ref = mapillary_visl.get_labels("/home/semantic_mapping/catkin_ws/src/online_semantic_mapping/config/config_65.json")
-        colored_output = mapillary_visl.apply_color_map(data, seg_color_ref)
+        colored_output = mapillary_visl.apply_color_map(data)
+        colored_output = np.squeeze(colored_output)
         img = Image.fromarray(colored_output.astype('uint8'))
         return img
     
